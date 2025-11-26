@@ -82,6 +82,7 @@ sample_docs/ — 5 labeled documents: HR, Legal, Finance, Medical, Support
 sample_output.json — example output
 
 🧠 Architecture (Pipeline)
+
 PDF/TXT
 
    ↓
