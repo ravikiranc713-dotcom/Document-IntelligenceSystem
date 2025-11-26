@@ -112,5 +112,6 @@ Insights JSON
 ▶️ Quickstart
 
 pip install -r requirements.txt
+
 python doc_intel.py --input_dir sample_docs --output output.json
 
