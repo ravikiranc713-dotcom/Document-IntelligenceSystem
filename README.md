@@ -4,7 +4,6 @@
 <p align="center">
   <img src="https://img.shields.io/badge/Python-3.13.7%2B-blue" />
   <img src="https://img.shields.io/badge/spaCy-NLP-green" />
-  <img src="https://img.shields.io/badge/License-MIT-yellow.svg" />
   <img src="https://img.shields.io/github/stars/github.com/ravikiranc713-dotcom/Document-IntelligenceSystem?style=social" />
   <img src="https://img.shields.io/github/issues/github.com/ravikiranc713-dotcom/Document-IntelligenceSystem" />
   <img src="https://img.shields.io/github/last-commit/ravikiranc713-dotcom/Document-IntelligenceSystem" />
