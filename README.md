@@ -2,7 +2,7 @@
 
 <h1 align="center">📄 Document Intelligence System</h1>
 <p align="center">
-  <img src="https://img.shields.io/badge/Python-3.13.7%2B-blue" />
+  <img src="https://img.shields.io/badge/Python-3.10%2B-blue" />
   <img src="https://img.shields.io/badge/spaCy-NLP-green" />
   <img src="https://img.shields.io/github/stars/ravikiranc713-dotcom/Document-IntelligenceSystem" />
   <img src="https://img.shields.io/github/issues/ravikiranc713-dotcom/Document-IntelligenceSystem" />
