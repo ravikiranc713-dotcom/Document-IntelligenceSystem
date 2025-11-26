@@ -73,6 +73,7 @@ Summary
 Top keywords
 
 File name and metadata
+
 📦 Deliverables Included
 doc_intel.py — standalone script
 
@@ -82,18 +83,31 @@ sample_output.json — example output
 
 🧠 Architecture (Pipeline)
 PDF/TXT
+
    ↓
+   
 Extraction (pdfplumber)
+
    ↓
+   
 Cleaning & Normalization
+
    ↓
+   
 NER (spaCy)
+
    ↓
+   
 Document Classification (Rule-based / ML)
+
    ↓
+   
 Summarization (Extractive or LLM)
+
    ↓
+   
 Insights JSON
+
 
 ▶️ Quickstart
 
