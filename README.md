@@ -4,8 +4,8 @@
 <p align="center">
   <img src="https://img.shields.io/badge/Python-3.13.7%2B-blue" />
   <img src="https://img.shields.io/badge/spaCy-NLP-green" />
-  <img src="https://img.shields.io/github/stars/github.com/ravikiranc713-dotcom/Document-IntelligenceSystem?style=social" />
-  <img src="https://img.shields.io/github/issues/github.com/ravikiranc713-dotcom/Document-IntelligenceSystem" />
+  <img src="https://img.shields.io/github/stars/ravikiranc713-dotcom/Document-IntelligenceSystem?style=social" />
+  <img src="https://img.shields.io/github/issues/ravikiranc713-dotcom/Document-IntelligenceSystem" />
   <img src="https://img.shields.io/github/last-commit/ravikiranc713-dotcom/Document-IntelligenceSystem" />
 </p>
 <p align="center">A lightweight end-to-end Document Understanding Pipeline.</p>
