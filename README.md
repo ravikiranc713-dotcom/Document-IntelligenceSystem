@@ -73,3 +73,30 @@ Summary
 Top keywords
 
 File name and metadata
+📦 Deliverables Included
+doc_intel.py — standalone script
+
+sample_docs/ — 5 labeled documents: HR, Legal, Finance, Medical, Support
+
+sample_output.json — example output
+
+🧠 Architecture (Pipeline)
+PDF/TXT
+   ↓
+Extraction (pdfplumber)
+   ↓
+Cleaning & Normalization
+   ↓
+NER (spaCy)
+   ↓
+Document Classification (Rule-based / ML)
+   ↓
+Summarization (Extractive or LLM)
+   ↓
+Insights JSON
+
+▶️ Quickstart
+
+pip install -r requirements.txt
+python doc_intel.py --input_dir sample_docs --output output.json
+
