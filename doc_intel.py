@@ -1,4 +1,4 @@
-#!/usr/bin/env python3
+
 """
 doc_intel.py
 Standalone pipeline for Document Intelligence System.
