@@ -1,0 +1,3 @@
+Support Ticket #4532
+
+Customer reports issue: unable to login to the portal. Steps tried: password reset, cache clear. SLA allowed 24 hours. Assigned to Tier 2 support for further investigation and resolution.

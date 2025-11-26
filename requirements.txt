@@ -1,0 +1,10 @@
+pdfplumber
+pypdf
+spacy>=3.0
+scikit-learn
+transformers
+sentence-transformers
+torch
+tqdm
+pandas
+numpy
