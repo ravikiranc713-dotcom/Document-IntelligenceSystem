@@ -137,8 +137,7 @@ Generates structured JSON output including:
 * **`doc_intel.py`** — standalone pipeline script
 * **`sample_docs/`** — 5 labeled business documents (HR, Legal, Finance, Medical, Support)
 * **`sample_output.json`** — example output JSON
-* *(Optional)* `notebook/Document_Intelligence.ipynb` — interactive walkthrough
-* *(Optional)* `WHITEBOARD.md` — system design + interview notes
+
 
 ---
 
