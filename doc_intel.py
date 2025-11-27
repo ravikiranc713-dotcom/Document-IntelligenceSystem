@@ -1,3 +1,4 @@
+
 """
 doc_intel.py
 Document Intelligence pipeline with model caching, optional parallelism, safer PDF handling.
@@ -9,10 +10,15 @@ import argparse
 import json
 import re
 import sys
+import logging
 from pathlib import Path
 from collections import Counter
 from typing import List, Tuple, Optional, Dict, Any
 from concurrent.futures import ThreadPoolExecutor, as_completed
+
+# Configure logging
+logging.basicConfig(level=logging.INFO, format="[%(levelname)s] %(message)s")
+logger = logging.getLogger(__name__)
 
 # ---- Utilities ----
 def safe_read_text(path: Path) -> str:
@@ -26,7 +32,7 @@ def safe_read_text(path: Path) -> str:
 
 # ---- Text extraction ----
 def extract_text_from_pdf(path: Path) -> str:
-    """Extract text from PDF using pdfplumber or fallback to PyPDF2. If both fail, raise."""
+    """Extract text from PDF using pdfplumber or fallback to PyPDF2. If both fail, return empty string."""
     if path.suffix.lower() in [".txt", ".md"]:
         return safe_read_text(path)
 
@@ -51,7 +57,7 @@ def extract_text_from_pdf(path: Path) -> str:
             return "\n\n".join(pages).strip()
         except Exception as e2:
             # Give a clear error rather than returning binary
-            print(f"[error] PDF extraction failed for {path.name}: pdfplumber err: {e1}; PyPDF2 err: {e2}", file=sys.stderr)
+            logger.error("PDF extraction failed for %s: pdfplumber err: %s; PyPDF2 err: %s", path.name, e1, e2)
             return ""
 
 # ---- Cleaning ----
@@ -73,21 +79,23 @@ def clean_text(text: str, preserve_paragraphs: bool = True) -> str:
 
 # ---- NER (spaCy) ----
 class NerRunner:
-    def __init__(self, model_name: str = "en_core_web_sm", disable=[]):
+    def __init__(self, model_name: str = "en_core_web_sm", disable=None):
         self.model_name = model_name
         self.nlp = None
-        self.disable = disable
+        self.disable = disable or []
 
     def load(self):
         if self.nlp is None:
             try:
                 import spacy
                 self.nlp = spacy.load(self.model_name, disable=self.disable)
+                logger.info("Loaded spaCy model %s", self.model_name)
             except Exception as e:
-                print(f"[warn] spaCy model load failed ({self.model_name}): {e}. NER disabled.", file=sys.stderr)
+                logger.warning("spaCy model load failed (%s): %s. NER disabled.", self.model_name, e)
                 self.nlp = None
 
     def run(self, text: str) -> List[Tuple[str, str]]:
+        # defensive: ensure loaded
         self.load()
         if not self.nlp or not text:
             return []
@@ -100,7 +108,7 @@ def classify_text(text: str, classifier=None, keywords: Optional[Dict[str, List[
         try:
             return classifier.predict([text])[0]
         except Exception as e:
-            print(f"[warn] classifier predict failed: {e}", file=sys.stderr)
+            logger.warning("classifier predict failed: %s", e)
 
     if keywords is None:
         keywords = {
@@ -122,7 +130,7 @@ def classify_text(text: str, classifier=None, keywords: Optional[Dict[str, List[
 
 # ---- Summarization (HuggingFace pipeline cached) ----
 class Summarizer:
-    def __init__(self, model_name: Optional[str] = None, tokenizer_chunk: int = 1000):
+    def __init__(self, model_name: Optional[str] = None, tokenizer_chunk: int = 2000):
         """
         model_name: hf model for pipeline (if None -> use naive extractive fallback)
         tokenizer_chunk: approximate characters per chunk for model summarizer
@@ -136,13 +144,15 @@ class Summarizer:
             try:
                 from transformers import pipeline
                 self.pipeline = pipeline("summarization", model=self.model_name, truncation=True)
+                logger.info("Loaded summarizer model %s", self.model_name)
             except Exception as e:
-                print(f"[warn] Summarizer pipeline load failed ({self.model_name}): {e}. Using fallback.", file=sys.stderr)
+                logger.warning("Summarizer pipeline load failed (%s): %s. Using fallback.", self.model_name, e)
                 self.pipeline = None
 
     def summarize(self, text: str, max_length: int = 150) -> str:
         if not text:
             return ""
+        # defensive: ensure pipeline loaded
         self.load()
         if self.pipeline:
             # naive chunking by characters so we don't exceed model limits
@@ -153,16 +163,16 @@ class Summarizer:
                     out = self.pipeline(c, max_length=max_length, min_length=30, do_sample=False)
                     parts.append(out[0].get('summary_text', '').strip())
                 except Exception as e:
-                    print(f"[warn] summarizer failed on a chunk: {e}", file=sys.stderr)
+                    logger.warning("summarizer failed on a chunk: %s", e)
             return " ".join([p for p in parts if p])
         # fallback extractive: pick top 3 sentences by frequency score
         sents = re.split(r'(?<=[.!?])\s+', text)
         if not sents:
             return ""
-        words = re.findall(r'\w+', text.lower())
+        words = re.findall(r"\w+", text.lower())
         freq = Counter(words)
         def score(sent):
-            tokens = re.findall(r'\w+', sent.lower())
+            tokens = re.findall(r"\w+", sent.lower())
             if not tokens:
                 return 0.0
             return sum(freq.get(t,0) for t in tokens) / (len(tokens) + 1)
@@ -172,7 +182,7 @@ class Summarizer:
 # ---- Insights ----
 def extract_insights(ent_list: List[Tuple[str, str]], summary: str, text: str) -> Dict[str, Any]:
     c = Counter([label for _, label in ent_list])
-    top_terms = Counter(re.findall(r'\w+', text.lower())).most_common(20)
+    top_terms = Counter(re.findall(r"\w+", text.lower())).most_common(20)
     return {
         "entity_counts": dict(c),
         "top_terms": top_terms,
@@ -187,6 +197,9 @@ def process_file(path: Path, ner_runner: NerRunner, summarizer: Summarizer, clas
     else:
         raw = extract_text_from_pdf(path)
     cleaned = clean_text(raw, preserve_paragraphs=preserve_paragraphs)
+    # early skip for empty documents
+    if not cleaned:
+        return {"file": str(path), "category": "Empty", "entities": [], "summary": "", "insights": {}}
     ner = ner_runner.run(cleaned) if ner_runner else []
     category = classify_text(cleaned, classifier)
     summary = summarizer.summarize(cleaned) if summarizer else ""
@@ -213,40 +226,49 @@ def main(argv=None):
 
     in_path = Path(args.input_dir)
     if not in_path.exists() or not in_path.is_dir():
-        print(f"[error] input_dir {in_path} not found or not a directory", file=sys.stderr)
+        logger.error("input_dir %s not found or not a directory", in_path)
         return
 
     allowed = {ext.strip().lower() if ext.strip().startswith('.') else '.' + ext.strip().lower()
                for ext in args.file_types.split(',')}
     files = sorted([p for p in in_path.iterdir() if p.suffix.lower() in allowed])
 
+    # Create runners and preload models here (inside main)
     ner_runner = NerRunner(model_name=args.ner_model)
     summarizer = Summarizer(model_name=args.summ_model)
 
+    # Preload synchronously in main thread to avoid race conditions when using threads
+    ner_runner.load()
+    summarizer.load()
+
     results = []
+
     if args.workers and args.workers > 1:
         with ThreadPoolExecutor(max_workers=args.workers) as ex:
             futures = {ex.submit(process_file, p, ner_runner, summarizer, None, args.preserve_paragraphs): p for p in files}
             for fut in as_completed(futures):
                 p = futures[fut]
                 try:
-                    results.append(fut.result())
-                    print(f"[ok] processed {p.name}")
+                    res = fut.result()
+                    if res:
+                        results.append(res)
+                    logger.info("processed %s", p.name)
                 except Exception as e:
-                    print(f"[error] failed processing {p.name}: {e}", file=sys.stderr)
+                    logger.error("failed processing %s: %s", p.name, e)
     else:
         for p in files:
-            print(f"Processing {p.name} ...")
+            logger.info("Processing %s ...", p.name)
             try:
                 res = process_file(p, ner_runner, summarizer, None, args.preserve_paragraphs)
-                results.append(res)
+                if res:
+                    results.append(res)
             except Exception as e:
-                print(f"[error] failed processing {p.name}: {e}", file=sys.stderr)
+                logger.error("failed processing %s: %s", p.name, e)
 
     # Write JSON (ensure ASCII safe)
     with open(args.output, "w", encoding="utf-8") as f:
         json.dump(results, f, indent=2, ensure_ascii=False)
-    print(f"Wrote {len(results)} records to {args.output}")
+    logger.info("Wrote %d records to %s", len(results), args.output)
 
 if __name__ == "__main__":
     main()
