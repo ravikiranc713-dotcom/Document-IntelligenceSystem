@@ -160,29 +160,29 @@ Each document produces structured metadata:
 
 ```
 ┌──────────────┐
-│   Ingestion   │  ← PDFs, TXT, MD
+│   Ingestion  │  ← PDFs, TXT, MD
 └──────┬───────┘
        ↓
 ┌──────────────┐
-│ Text Extract  │  (pdfplumber → PyPDF2 fallback)
+│ Text Extract │  (pdfplumber → PyPDF2 fallback)
 └──────┬───────┘
        ↓
 ┌──────────────┐
-│   Cleaning    │  (whitespace, paragraphs)
+│   Cleaning   │  (whitespace, paragraphs)
 └──────┬───────┘
        ↓
 ┌──────────────┐
-│ NLP Pipeline  │─ NER (spaCy)  
-│               │─ Classifier  
-│               │─ Summarizer (HF / fallback)
+│ NLP Pipeline │─ NER (spaCy)  
+│              │─ Classifier  
+│              │─ Summarizer (HF / fallback)
 └──────┬───────┘
        ↓
 ┌──────────────┐
-│   Insights    │  (top terms, entity counts)
+│   Insights   │  (top terms, entity counts)
 └──────┬───────┘
        ↓
 ┌──────────────┐
-│   JSON Out    │
+│   JSON Out   │
 └──────────────┘
 ```
 
