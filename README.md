@@ -11,175 +11,182 @@
 <p align="center">A lightweight end-to-end Document Understanding Pipeline.</p>
 
 
-
 ---
 
 # 📄 Document Intelligence System
 
-A lightweight end-to-end **Document Understanding Pipeline** that processes business documents and produces structured insights.
-
-This project extracts text from PDF/TXT files, cleans it, performs **Named Entity Recognition (NER)**, runs **document classification**, generates **summaries**, and outputs everything as a structured **JSON insights file**.
-
-Supported document types:
-
-✔ HR
-✔ Legal
-✔ Finance
-✔ Medical
-✔ Customer Support
-✔ Unknown / Generic
+A lightweight, production-ready Python pipeline for **document ingestion, text extraction, cleaning, NER, classification, summarization, and insight generation**.
+Supports **PDF, TXT, MD**, with optional **parallel processing** and **model caching** for performance.
 
 ---
 
-# 🚀 Features
+## 🚀 Features
 
-## **1. PDF/Text Extraction**
+### ✔️ Robust Document Extraction
 
-* Uses `pdfplumber` for PDF parsing
-* Graceful fallback for `.txt` files
-* Works with scanned PDFs when OCR is added later
+* Extracts text from PDF using **pdfplumber → PyPDF2 (fallback)**
+* Gracefully handles failures and corrupt PDFs
+* Supports `.txt` and `.md` directly
 
----
+### ✔️ Clean, Well-Structured Text Processing
 
-## **2. Text Cleaning & Normalization**
-
+* Paragraph-preserving cleaning
 * Whitespace normalization
-* Header/footer cleanup
-* Sentence-safe preprocessing
+* Optional fully-flattened cleaning mode
+
+### ✔️ NLP Intelligence
+
+* **Named Entity Recognition (NER)** via spaCy
+* **Keyword-based text classification** (HR, Legal, Finance, Medical, Support)
+* **Summarization** using:
+
+  * HuggingFace `pipeline` (if model provided)
+  * OR fallback naive extractive summarizer
+
+### ✔️ Insights Module
+
+* Entity distribution
+* Top term frequencies
+* Per-document structured metadata
+
+### ✔️ Fast Parallel Processing
+
+* ThreadPoolExecutor with **safe model preloading**
+* Configurable worker count (`--workers N`)
+
+### ✔️ Clean Logging & Error Handling
+
+* Uses Python `logging` for professional output
+* Skips unreadable / empty docs gracefully
 
 ---
 
-## **3. Named Entity Recognition (NER)**
+## 📦 Installation
 
-> **Note:** spaCy models are not included in `requirements.txt` because they are packaged separately.
-> You must download the English NER model before running the pipeline.
-
-This project uses **spaCy** to extract entities such as:
-
-* ORG (Organizations)
-* PERSON
-* DATE
-* MONEY
-* GPE (Locations)
-* Many more
-
-### 📦 **spaCy Model Requirement**
-
-After installing dependencies, install the English model:
-
-```bash
-python -m spacy download en_core_web_sm
-```
-
-### **What this model does in this project?**
-
-The `en_core_web_sm` model enables extraction of semantic information like:
-
-* Employee names
-* Company names
-* Legal terms
-* Financial values
-* Medical terminology
-* Customer names
-* Locations and dates
-
-### **Example**
-
-**Input:**
-
-```
-"Acme Corp agreed to pay ₹50,000 by 15 March 2023."
-```
-
-**Entities Extracted:**
-
-* **ORG:** Acme Corp
-* **MONEY:** ₹50,000
-* **DATE:** 15 March 2023
-
-If the model is *not* installed, the program still runs but logs a warning and returns empty NER results.
-
----
-
-## **4. Document Classification**
-
-Two modes:
-
-* ✔ Rule-based classifier (fast, no training needed)
-* ✔ Optional ML classifier (sklearn or transformers)
-
----
-
-## **5. Summarization**
-
-Two options:
-
-* ✔ Lightweight extractive summarizer (default; no heavy models)
-* ✔ Optional abstractive summarization (transformers-based)
-
----
-
-## **6. Insights Builder**
-
-Generates structured JSON output including:
-
-* Extracted entities
-* Entity counts
-* Document category
-* Summary
-* Top keywords
-* Metadata
-
----
-
-# 📦 Deliverables Included
-
-* **`doc_intel.py`** — standalone pipeline script
-* **`sample_docs/`** — 5 labeled business documents (HR, Legal, Finance, Medical, Support)
-* **`sample_output.json`** — example output JSON
-
-
----
-
-# 🧠 Architecture (Pipeline)
-
-```
-PDF/TXT
-   ↓
-Extraction (pdfplumber)
-   ↓
-Cleaning & Normalization
-   ↓
-NER (spaCy)
-   ↓
-Document Classification (Rule-based / ML)
-   ↓
-Summarization (Extractive or LLM)
-   ↓
-Insights JSON
-```
-
----
-
-# ▶️ Quickstart
-
-Install dependencies:
+### Install dependencies
 
 ```bash
 pip install -r requirements.txt
 ```
 
-Install the spaCy model:
+### Recommended optional packages
 
 ```bash
+pip install pdfplumber PyPDF2 spacy transformers
 python -m spacy download en_core_web_sm
 ```
 
-Run the pipeline:
+---
+
+## 🧠 Usage
+
+### Basic usage
 
 ```bash
-python doc_intel.py --input_dir sample_docs --output output.json
+python doc_intel.py --input_dir sample_docs --output results.json
+```
+
+### With summarization model + 4 worker threads
+
+```bash
+python doc_intel.py \
+  --input_dir documents \
+  --output output.json \
+  --summ_model facebook/bart-large-cnn \
+  --workers 4
+```
+
+### Preserving paragraph structure (recommended for contracts/emails)
+
+```bash
+python doc_intel.py --input_dir docs --preserve_paragraphs
+```
+
+### Supported file types
+
+* `.pdf`
+* `.txt`
+* `.md`
+
+Control via:
+
+```bash
+--file_types ".pdf,.txt"
 ```
 
 ---
+
+## 📁 Output Format (JSON)
+
+Each document produces structured metadata:
+
+```json
+{
+  "file": "sample.pdf",
+  "category": "Legal",
+  "entities": [
+    ["OpenAI", "ORG"],
+    ["2024", "DATE"]
+  ],
+  "summary": "Short summary text...",
+  "insights": {
+    "entity_counts": {
+      "ORG": 2,
+      "DATE": 1
+    },
+    "top_terms": [["contract", 12], ["party", 9]],
+    "summary": "Short summary..."
+  }
+}
+```
+
+---
+
+## ⚙️ Command-Line Arguments
+
+| Argument                | Description                       | Default              |
+| ----------------------- | --------------------------------- | -------------------- |
+| `--input_dir`           | Directory containing documents    | **Required**         |
+| `--output`              | Output JSON file                  | `sample_output.json` |
+| `--ner_model`           | spaCy model name                  | `en_core_web_sm`     |
+| `--summ_model`          | HuggingFace model name (optional) | None                 |
+| `--workers`             | Number of parallel threads        | 1                    |
+| `--preserve_paragraphs` | Keep paragraph structure          | Off                  |
+| `--file_types`          | Comma-separated allowed types     | `.pdf,.txt,.md`      |
+
+---
+
+## 🧩 Architecture
+
+```
+┌──────────────┐
+│   Ingestion   │  ← PDFs, TXT, MD
+└──────┬───────┘
+       ↓
+┌──────────────┐
+│ Text Extract  │  (pdfplumber → PyPDF2 fallback)
+└──────┬───────┘
+       ↓
+┌──────────────┐
+│   Cleaning    │  (whitespace, paragraphs)
+└──────┬───────┘
+       ↓
+┌──────────────┐
+│ NLP Pipeline  │─ NER (spaCy)  
+│               │─ Classifier  
+│               │─ Summarizer (HF / fallback)
+└──────┬───────┘
+       ↓
+┌──────────────┐
+│   Insights    │  (top terms, entity counts)
+└──────┬───────┘
+       ↓
+┌──────────────┐
+│   JSON Out    │
+└──────────────┘
+```
+
+---
+
+
 
